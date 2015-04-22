@@ -51,6 +51,15 @@ describe('failure tests', function () {
     });
   });
 
+  it('should throw if authorization header is not Bearer', function() {
+    req.headers = {};
+    req.headers.authorization = 'Basic foobar';
+    restifyjwt({secret: 'shhhh'})(req, res, function(err) {
+      assert.ok(err);
+      assert.equal(err.body.code, 'InvalidCredentials');
+    });
+  });
+
   it('should throw if authorization header is not well-formatted jwt', function() {
     req.headers = {};
     req.headers.authorization = 'Bearer wrongjwt';
@@ -82,7 +91,7 @@ describe('failure tests', function () {
     restifyjwt({secret: 'shhhhhh', audience: 'not-expected-audience'})(req, res, function(err) {
       assert.ok(err);
       assert.equal(err.body.code, 'InvalidCredentials');
-      assert.equal(err.we_cause.message, 'jwt audience invalid. expected: expected-audience');
+      assert.equal(err.we_cause.message, 'jwt audience invalid. expected: not-expected-audience');
     });
   });
 
@@ -108,7 +117,7 @@ describe('failure tests', function () {
     restifyjwt({secret: 'shhhhhh', issuer: 'http://wrong'})(req, res, function(err) {
       assert.ok(err);
       assert.equal(err.body.code, 'InvalidCredentials');
-      assert.equal(err.we_cause.message, 'jwt issuer invalid. expected: http://foo');
+      assert.equal(err.we_cause.message, 'jwt issuer invalid. expected: http://wrong');
     });
   });
 
@@ -130,6 +139,25 @@ describe('failure tests', function () {
   });
 
 
+  it('should throw error when signature is wrong', function() {
+      var secret = "shhh";
+      var token = jwt.sign({foo: 'bar', iss: 'http://www'}, secret);
+      // manipulate the token
+      var newContent = new Buffer("{foo: 'bar', edg: 'ar'}").toString('base64');
+      var splitetToken = token.split(".");
+      splitetToken[1] = newContent;
+      var newToken = splitetToken.join(".");
+
+      // build request
+      req.headers = [];
+      req.headers.authorization = 'Bearer ' + newToken;
+      restifyjwt({secret: secret})(req,res, function(err) {
+        assert.ok(err);
+        assert.equal(err.body.code, 'InvalidCredentials');
+        assert.equal(err.we_cause.message, 'invalid token');
+      });
+  });
+
 });
 
 describe('work tests', function () {
@@ -138,6 +166,17 @@ describe('work tests', function () {
 
   it('should work if authorization header is valid jwt', function() {
     var secret = 'shhhhhh';
+    var token = jwt.sign({foo: 'bar'}, secret);
+
+    req.headers = {};
+    req.headers.authorization = 'Bearer ' + token;
+    restifyjwt({secret: secret})(req, res, function() {
+      assert.equal('bar', req.user.foo);
+    });
+  });
+
+  it('should work if authorization header is valid with a buffer secret', function() {
+    var secret = new Buffer('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA', 'base64');
     var token = jwt.sign({foo: 'bar'}, secret);
 
     req.headers = {};
@@ -203,5 +242,4 @@ describe('work tests', function () {
       assert.equal('bar', req.user.foo);
     });
   });
-
 });
