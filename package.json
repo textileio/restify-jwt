@@ -35,8 +35,8 @@
   "dependencies": {
     "async": "^0.9.0",
     "express-unless": "0.0.0",
-    "restify": "^2.8.x",
-    "jsonwebtoken": "^5.0.0"
+    "jsonwebtoken": "^5.0.0",
+    "restify": "^3.0.2"
   },
   "devDependencies": {
     "mocha": "1.x.x"
