@@ -63,7 +63,7 @@ jwt({ secret: publicKey, requestProperty: 'auth' });
 A custom function for extracting the token from a request can be specified with
 the `getToken` option. This is useful if you need to pass the token through a
 query parameter or a cookie. You can throw an error in this function and it will
-be handled by `express-jwt`.
+be handled by `restify-jwt`.
 
 ```javascript
 app.use(jwt({
@@ -82,7 +82,7 @@ app.use(jwt({
 
 ### Multi-tenancy
 If you are developing an application in which the secret used to sign tokens is not static, you can provide a callback function as the `secret` parameter. The function has the signature: `function(req, payload, done)`:
-* `req` (`Object`) - The express `request` object.
+* `req` (`Object`) - The restify `request` object.
 * `payload` (`Object`) - An object with the JWT claims.
 * `done` (`Function`) - A function with signature `function(err, secret)` to be invoked when the secret is retrieved.
   * `err` (`Any`) - The error that occurred.
@@ -90,7 +90,7 @@ If you are developing an application in which the secret used to sign tokens is 
 
 For example, if the secret varies based on the [JWT issuer](http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html#issDef):
 ```javascript
-var jwt = require('express-jwt');
+var jwt = require('restify-jwt');
 var data = require('./data');
 var utilities = requre('./utilities');
 
@@ -116,7 +116,7 @@ app.get('/protected',
 
 ### Revoked tokens
 It is possible that some tokens will need to be revoked so they cannot be used any longer. You can provide a function as the `isRevoked` option. The signature of the function is `function(req, payload, done)`:
-* `req` (`Object`) - The express `request` object.
+* `req` (`Object`) - The restify `request` object.
 * `payload` (`Object`) - An object with the JWT claims.
 * `done` (`Function`) - A function with signature `function(err, revoked)` to be invoked once the check to see if the token is revoked or not is complete.
   * `err` (`Any`) - The error that occurred.
@@ -124,7 +124,7 @@ It is possible that some tokens will need to be revoked so they cannot be used a
 
 For example, if the `(iss, jti)` claim pair is used to identify a JWT:
 ```javascript
-var jwt = require('express-jwt');
+var jwt = require('restify-jwt');
 var data = require('./data');
 var utilities = requre('./utilities');
 
