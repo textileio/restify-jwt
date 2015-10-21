@@ -1,5 +1,6 @@
 # restify-jwt
 
+[![NPM](https://img.shields.io/npm/v/restify-jwt.svg)](https://www.npmjs.com/package/restify-jwt)
 [![Build Status](https://travis-ci.org/amrav/restify-jwt.svg)](https://travis-ci.org/amrav/restify-jwt)
 
 [Restify](http://mcavage.me/node-restify/) middleware that validates JsonWebTokens and sets `req.user`.
