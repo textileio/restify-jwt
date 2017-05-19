@@ -60,9 +60,26 @@ describe('failure tests', function () {
     });
   });
 
+  it('should next if authorization header is not Bearer and credentialsRequired is false', function() {
+    req.headers = {};
+    req.headers.authorization = 'Basic foobar';
+    restifyjwt({secret: 'shhhh', credentialsRequired: false})(req, res, function(err) {
+      assert.ok(typeof err === 'undefined');
+    });
+  });
+
   it('should throw if authorization header is not well-formatted jwt', function() {
     req.headers = {};
     req.headers.authorization = 'Bearer wrongjwt';
+    restifyjwt({secret: 'shhhh'})(req, res, function(err) {
+      assert.ok(err);
+      assert.equal(err.body.code, 'InvalidCredentials');
+    });
+  });
+
+  it('should throw if jwt is an invalid json', function() {
+    req.headers = {};
+    req.headers.authorization = 'Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.yJ1c2VybmFtZSI6InNhZ3VpYXIiLCJpYXQiOjE0NzEwMTg2MzUsImV4cCI6MTQ3MzYxMDYzNX0.foo';
     restifyjwt({secret: 'shhhh'})(req, res, function(err) {
       assert.ok(err);
       assert.equal(err.body.code, 'InvalidCredentials');
@@ -78,7 +95,6 @@ describe('failure tests', function () {
     restifyjwt({secret: 'different-shhhh'})(req, res, function(err) {
       assert.ok(err);
       assert.equal(err.body.code, 'InvalidCredentials');
-      assert.equal(err.we_cause.message, 'invalid signature');
     });
   });
 
@@ -91,7 +107,6 @@ describe('failure tests', function () {
     restifyjwt({secret: 'shhhhhh', audience: 'not-expected-audience'})(req, res, function(err) {
       assert.ok(err);
       assert.equal(err.body.code, 'InvalidCredentials');
-      assert.equal(err.we_cause.message, 'jwt audience invalid. expected: not-expected-audience');
     });
   });
 
@@ -104,7 +119,6 @@ describe('failure tests', function () {
     restifyjwt({secret: 'shhhhhh'})(req, res, function(err) {
       assert.ok(err);
       assert.equal(err.body.code, 'InvalidCredentials');
-      assert.equal(err.we_cause.message, 'jwt expired');
     });
   });
 
@@ -117,7 +131,6 @@ describe('failure tests', function () {
     restifyjwt({secret: 'shhhhhh', issuer: 'http://wrong'})(req, res, function(err) {
       assert.ok(err);
       assert.equal(err.body.code, 'InvalidCredentials');
-      assert.equal(err.we_cause.message, 'jwt issuer invalid. expected: http://wrong');
     });
   });
 
@@ -154,7 +167,6 @@ describe('failure tests', function () {
       restifyjwt({secret: secret})(req,res, function(err) {
         assert.ok(err);
         assert.equal(err.body.code, 'InvalidCredentials');
-        assert.equal(err.we_cause.message, 'invalid token');
       });
   });
 
@@ -172,6 +184,17 @@ describe('work tests', function () {
     req.headers.authorization = 'Bearer ' + token;
     restifyjwt({secret: secret})(req, res, function() {
       assert.equal('bar', req.user.foo);
+    });
+  });
+
+  it('should work with nested properties', function() {
+    var secret = 'shhhhhh';
+    var token = jwt.sign({foo: 'bar'}, secret);
+
+    req.headers = {};
+    req.headers.authorization = 'Bearer ' + token;
+    restifyjwt({secret: secret, requestProperty: 'auth.token'})(req, res, function() {
+      assert.equal('bar', req.auth.token.foo);
     });
   });
 
@@ -197,22 +220,38 @@ describe('work tests', function () {
     });
   });
 
+  it('should set resultProperty if option provided', function() {
+    var secret = 'shhhhhh';
+    var token = jwt.sign({foo: 'bar'}, secret);
+
+    req = { };
+    res = { };
+    req.headers = {};
+    req.headers.authorization = 'Bearer ' + token;
+    restifyjwt({secret: secret, resultProperty: 'locals.user'})(req, res, function() {
+      assert.equal('bar', res.locals.user.foo);
+      assert.ok(typeof req.user === 'undefined');
+    });
+  });
+
+  it('should ignore userProperty if resultProperty option provided', function() {
+    var secret = 'shhhhhh';
+    var token = jwt.sign({foo: 'bar'}, secret);
+
+    req = { };
+    res = { };
+    req.headers = {};
+    req.headers.authorization = 'Bearer ' + token;
+    restifyjwt({secret: secret, userProperty: 'auth', resultProperty: 'locals.user'})(req, res, function() {
+      assert.equal('bar', res.locals.user.foo);
+      assert.ok(typeof req.auth === 'undefined');
+    });
+  });
+
   it('should work if no authorization header and credentials are not required', function() {
     req = {};
     restifyjwt({secret: 'shhhh', credentialsRequired: false})(req, res, function(err) {
       assert(typeof err === 'undefined');
-    });
-  });
-
-  it('should work if token is expired and credentials are not required', function() {
-    var secret = 'shhhhhh';
-    var token = jwt.sign({foo: 'bar', exp: 1382412921}, secret);
-
-    req.headers = {};
-    req.headers.authorization = 'Bearer ' + token;
-    restifyjwt({ secret: secret, credentialsRequired: false })(req, res, function(err) {
-      assert(typeof err === 'undefined');
-      assert(typeof req.user === 'undefined')
     });
   });
 
@@ -221,6 +260,19 @@ describe('work tests', function () {
     restifyjwt({ secret: 'shhhh' })(req, res, function(err) {
       assert(typeof err !== 'undefined');
     });
+  });
+
+  it('should produce a stack trace that includes the failure reason', function() {
+    var req = {};
+    var token = jwt.sign({foo: 'bar'}, 'secretA');
+    req.headers = {};
+    req.headers.authorization = 'Bearer ' + token;
+
+    restifyjwt({secret: 'secretB'})(req, res, function(err) {
+      var index = err.stack.indexOf('UnauthorizedError: invalid signature')
+      assert.equal(index, 0, "Stack trace didn't include 'invalid signature' message.")
+    });
+
   });
 
   it('should work with a custom getToken function', function() {
