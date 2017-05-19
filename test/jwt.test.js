@@ -269,7 +269,6 @@ describe('work tests', function () {
     req.headers.authorization = 'Bearer ' + token;
 
     restifyjwt({secret: 'secretB'})(req, res, function(err) {
-      console.log(err);
       var index = err.stack.indexOf('InvalidCredentialsError')
       assert.equal(index, 0, "Stack trace didn't include 'invalid signature' message.")
     });
