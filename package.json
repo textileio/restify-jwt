@@ -1,5 +1,5 @@
 {
-  "name": "restify-jwt",
+  "name": "@textile/restify-jwt",
   "version": "0.4.0",
   "description": "JWT authentication middleware.",
   "keywords": [
