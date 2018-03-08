@@ -1,6 +1,6 @@
 {
   "name": "@textile/restify-jwt",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "JWT authentication middleware.",
   "keywords": [
     "auth",
@@ -46,7 +46,7 @@
     "restify-errors": "^5.0.0"
   },
   "engines": {
-    "node": "8.x"
+    "node": ">=8.0"
   },
   "scripts": {
     "test": "node_modules/.bin/mocha --reporter spec"
